@@ -139,21 +139,29 @@ Question 6
 Elegant way but not allowed in Mode
 */
 
-
 select PERCENTILE_CONT (0.5)
-       WITHIN GROUP(ORDER BY COUNT(b.series_a_funding)) as median_series_a_funding
+       WITHIN GROUP(ORDER BY COUNT(c.series_a_funding_all)) as median_series_a_funding
 from
 (
-  select company_name,
-         AVG(raised_amount_usd) as series_a_funding
-  from tutorial.crunchbase_investments 
-  where company_country_code='USA'
-    and company_state_code='CA'
-    and funding_round_type='series-a'
-    and company_category_code='biotech'
-  GROUP BY 1
-)b
-
+select 
+    b.company_name,
+    sum(series_a_funding) as series_a_funding_all
+  from
+    (
+      select company_name,
+             funded_at,
+             AVG(raised_amount_usd) as series_a_funding
+      from tutorial.crunchbase_investments 
+      where company_country_code='USA'
+        and company_state_code='CA'
+        and funding_round_type='series-a'
+        and company_category_code='biotech'
+      GROUP BY 1,2
+      HAVING sum(raised_amount_usd) is not null
+    )b
+    GROUP by 1
+)c
+                    
 /*
 Brute force - finding number of companies with series A funding
 */
